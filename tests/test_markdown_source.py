@@ -90,7 +90,7 @@ class TestFrontMatter:
         assert [s.title for s in slides] == ["One"]
 
     def test_is_read_back(self, tmp_path):
-        (tmp_path / "talk.md").write_text("---\ntitle: A talk\ntheme: dark\n---\n\n# One\n")
+        (tmp_path / "talk.md").write_text("---\ntitle: A talk\ntheme: dark\n---\n\n# One\n", encoding="utf-8")
         assert markdown_meta(tmp_path / "talk.md") == {"title": "A talk", "theme": "dark"}
 
     def test_a_deck_that_opens_with_a_break_keeps_it(self):
@@ -104,10 +104,10 @@ class TestFrontMatter:
 
 class TestParse:
     def test_takes_a_markdown_file(self, tmp_path):
-        (tmp_path / "a.md").write_text("# One\n")
+        (tmp_path / "a.md").write_text("# One\n", encoding="utf-8")
         assert len(parse(tmp_path / "a.md")) == 1
 
     def test_refuses_anything_else(self, tmp_path):
-        (tmp_path / "a.txt").write_text("# One\n")
+        (tmp_path / "a.txt").write_text("# One\n", encoding="utf-8")
         with pytest.raises(ValueError, match="ipynb"):
             parse(tmp_path / "a.txt")

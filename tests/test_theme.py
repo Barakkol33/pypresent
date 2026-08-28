@@ -59,26 +59,26 @@ class TestReplace:
 
 class TestFiles:
     def test_toml(self, tmp_path):
-        (tmp_path / "mine.toml").write_text('base = "dark"\naccent = "#abcdef"\n')
+        (tmp_path / "mine.toml").write_text('base = "dark"\naccent = "#abcdef"\n', encoding="utf-8")
         got = Theme.load(tmp_path / "mine.toml")
         assert (got.name, got.accent, got.canvas) == ("mine", "#abcdef",
                                                       Theme.named("dark").canvas)
 
     def test_json(self, tmp_path):
-        (tmp_path / "mine.json").write_text(json.dumps({"accent": "#abcdef"}))
+        (tmp_path / "mine.json").write_text(json.dumps({"accent": "#abcdef"}), encoding="utf-8")
         assert Theme.load(tmp_path / "mine.json").accent == "#abcdef"
 
     def test_a_theme_table_is_optional(self, tmp_path):
-        (tmp_path / "mine.toml").write_text('[theme]\naccent = "#abcdef"\n')
+        (tmp_path / "mine.toml").write_text('[theme]\naccent = "#abcdef"\n', encoding="utf-8")
         assert Theme.load(tmp_path / "mine.toml").accent == "#abcdef"
 
     def test_resolve_takes_a_path(self, tmp_path):
-        (tmp_path / "mine.toml").write_text('accent = "#abcdef"\n')
+        (tmp_path / "mine.toml").write_text('accent = "#abcdef"\n', encoding="utf-8")
         assert Theme.resolve(str(tmp_path / "mine.toml")).accent == "#abcdef"
 
     def test_to_toml_round_trips(self, tmp_path):
         theme = Theme.named("slate").replace(accent="#101010", css="body{opacity:1}")
-        (tmp_path / "out.toml").write_text(theme.to_toml())
+        (tmp_path / "out.toml").write_text(theme.to_toml(), encoding="utf-8")
         again = Theme.load(tmp_path / "out.toml", name="slate")
         assert again == theme
 

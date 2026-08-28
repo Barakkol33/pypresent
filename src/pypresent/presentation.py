@@ -18,6 +18,7 @@ from .blocks import code as _code
 from .blocks import figure as _figure
 from .blocks import image, md, notes, out, slide, slide_payload
 from .blocks import result as _result
+from .console import say
 from .context import activate as _activate
 from .context import using
 from .deck import CONFIG_MIME, markdown_meta, parse
@@ -223,7 +224,7 @@ class Presentation:
             nonlocal said
             said += 1
             self._warnings.append(message)
-            print(f"  ! {message}")
+            say(f"  ! {message}")
 
         if self.slides.suffix != ".ipynb":
             return 0
@@ -297,9 +298,9 @@ class Presentation:
             raise ValueError(f"a deck is written as html or md, not {fmt!r}")
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(page, encoding="utf-8")
-        print(f"{_short(target)}  ·  {len(slides)} slides  ·  {self.lang}  ·  "
-              f"{self.direction}  ·  {self.theme.name}  ·  "
-              f"{target.stat().st_size / 1024:.0f} KB")
+        say(f"{_short(target)}  ·  {len(slides)} slides  ·  {self.lang}  ·  "
+            f"{self.direction}  ·  {self.theme.name}  ·  "
+            f"{target.stat().st_size / 1024:.0f} KB")
         return 0
 
     @contextmanager
@@ -365,7 +366,7 @@ class Presentation:
         evalue = getattr(failure, "evalue", "") or ""
         why = f"{ename}: {evalue}".strip(": ") or ANSI.sub(
             "", str(failure)).strip().splitlines()[-1]
-        print(f"{what} stopped on a cell - {ANSI.sub('', why)}", file=sys.stderr)
+        say(f"{what} stopped on a cell - {ANSI.sub('', why)}", sys.stderr)
 
         failed = next((c for c in nb.cells
                        if any(o.get("output_type") == "error"
@@ -375,7 +376,7 @@ class Presentation:
         lines = nbio.source(failed).strip().splitlines()
         shown = lines[:6] + (["…"] if len(lines) > 6 else [])
         for line in shown:
-            print(f"    {line}", file=sys.stderr)
+            say(f"    {line}", sys.stderr)
 
     def run_source(self) -> int:
         """Execute the source notebook in place, so what the deck quotes is current.
@@ -396,7 +397,7 @@ class Presentation:
         if not self._execute(nb, self.source.parent, self.source.name):
             return 1                      # and the notebook on disk is left alone
         nbformat.write(nb, self.source)
-        print(self.source.name)
+        say(self.source.name)
         return 0
 
     # the old name, for a notebook written against 0.1
@@ -435,7 +436,7 @@ class Presentation:
             if not self._execute(nb, self.base, self.slides.name):
                 return 1
             nbformat.write(nb, self.slides)
-            print(self.slides.name)
+            say(self.slides.name)
             # the notebook declares itself as it runs, so the parameters to
             # check and render with are the ones the run just wrote
             deck = Presentation.from_notebook(self.slides, **self._override)
@@ -478,7 +479,7 @@ class Presentation:
             if not page.exists():
                 continue
             undescribed = nbio.describe(page, nbio.alt_texts(Path(target)))
-            print(f"{_short(page)}  ·  {page.stat().st_size / 1024:.0f} KB")
+            say(f"{_short(page)}  ·  {page.stat().st_size / 1024:.0f} KB")
             if undescribed:
                 print(f"  ! {undescribed} image(s) with no description: give the cell "
                       f"an `alt_text` in its metadata, or the plot a title", file=sys.stderr)

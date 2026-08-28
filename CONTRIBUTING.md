@@ -41,10 +41,11 @@ a running kernel, that is worth a second look at the change.
 | `render/html.py`, `render/markdown.py` | slides out |
 | `theme.py` | how a deck looks, as tokens |
 | `presentation.py` | a deck, described once; every action is a method on it |
+| `console.py` | saying something to whoever is running the build |
 | `cli.py` | the command |
 | `assets/`, `themes/` | the stylesheet, the script, the built-in themes |
 
-Two rules hold the design together, and are worth keeping:
+Three rules hold the design together, and are worth keeping:
 
 1. **A slide is plain data.** Elements are dicts with a `kind`, not classes.
    That is what lets a slide survive the round trip through a notebook cell
@@ -52,6 +53,10 @@ Two rules hold the design together, and are worth keeping:
 2. **Jupyter is imported inside the methods that need it**, never at module
    level. Rendering a stored notebook must keep working on a machine that has
    never had `nbclient` installed.
+3. **Every text read and write names its encoding, and every message goes
+   through `console.say`.** A deck is UTF-8 always; the terminal announcing it
+   may not be. `pytest` under `LC_ALL=C PYTHONUTF8=0` is the check, and CI runs
+   it.
 
 ## Style
 

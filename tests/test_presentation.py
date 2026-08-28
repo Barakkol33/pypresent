@@ -85,7 +85,7 @@ class TestRoundTrip:
         assert Presentation.from_notebook(tmp_path / "t-slides.ipynb").source == source_notebook
 
     def test_a_markdown_deck_declares_itself_in_its_front_matter(self, tmp_path):
-        (tmp_path / "t.md").write_text("---\ntitle: A talk\ntheme: dark\n---\n\n# One\n")
+        (tmp_path / "t.md").write_text("---\ntitle: A talk\ntheme: dark\n---\n\n# One\n", encoding="utf-8")
         deck = Presentation.from_notebook(tmp_path / "t.md")
         assert deck.title == "A talk"
         assert deck.theme.name == "dark"
@@ -95,7 +95,7 @@ class TestRender:
     def test_writes_the_deck_and_makes_the_folder(self, tmp_path, slides_notebook):
         deck = Presentation(slides=slides_notebook, output=tmp_path / "out" / "t.html")
         assert deck.render() == 0
-        assert "<!doctype html>" in deck.output.read_text()
+        assert "<!doctype html>" in deck.output.read_text(encoding="utf-8")
 
     def test_markdown_goes_beside_it_with_the_other_suffix(self, tmp_path, slides_notebook):
         deck = Presentation(slides=slides_notebook, output=tmp_path / "out" / "t.html")
@@ -115,7 +115,7 @@ class TestRender:
     def test_the_title_falls_back_to_the_first_slide(self, tmp_path, slides_notebook):
         deck = Presentation(slides=slides_notebook, output=tmp_path / "t.html")
         deck.render()
-        assert "<title>A talk</title>" in deck.output.read_text()
+        assert "<title>A talk</title>" in deck.output.read_text(encoding="utf-8")
 
 
 class TestBuild:
@@ -170,7 +170,7 @@ class TestBuild:
         assert order == []            # the slide notebook never runs on stale numbers
 
     def test_a_markdown_deck_has_neither_run(self, tmp_path):
-        (tmp_path / "t.md").write_text("# One\n")
+        (tmp_path / "t.md").write_text("# One\n", encoding="utf-8")
         deck = Presentation(slides=tmp_path / "t.md", output=tmp_path / "out.html")
         assert deck.build() == 0
         assert deck.output.exists()
@@ -222,5 +222,5 @@ class TestCheck:
         assert any("still in English" in w for w in deck._warnings)
 
     def test_a_markdown_deck_has_nothing_to_check(self, tmp_path):
-        (tmp_path / "t.md").write_text("# One\n")
+        (tmp_path / "t.md").write_text("# One\n", encoding="utf-8")
         assert Presentation(slides=tmp_path / "t.md").check() == 0

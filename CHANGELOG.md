@@ -69,6 +69,13 @@ deck, and is now a package.
   it and drops the tail.
 - The cell that declares the presentation is no longer rendered as a slide of its
   own source, and `check` no longer complains that it declares no slide.
+- **A non-UTF-8 terminal no longer breaks a build.** A deck carries arrows, a
+  middle dot and often Hebrew, and a redirected stdout under a locale that
+  cannot encode them - a pipe on a Windows runner, a cron job with `LC_ALL=C` -
+  made `pypresent` die printing its own progress line. Messages now fall back to
+  a plain-text equivalent (`·` to `-`, `…` to `...`); the deck file itself was
+  always written as UTF-8 and is unchanged. CI runs the suite under `LC_ALL=C`
+  so this is caught in seconds rather than in the Windows job.
 
 [Unreleased]: https://github.com/Barakkol33/pypresent/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/Barakkol33/pypresent/releases/tag/v0.1.0

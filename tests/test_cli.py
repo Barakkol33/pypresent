@@ -50,17 +50,17 @@ class TestRender:
     def test_the_theme_flag_wins_over_the_front_matter(self, here):
         a_markdown_deck(here / "talk.md", "---\ntheme: dark\n---\n\n# One\n")
         main(["render", "talk.md", "--theme", "office"])
-        assert "#0f6cbd" in (here / "talk.html").read_text()
+        assert "#0f6cbd" in (here / "talk.html").read_text(encoding="utf-8")
 
     def test_markdown_out(self, here):
         a_markdown_deck(here / "talk.md")
         assert main(["render", "talk.md", "-f", "md"]) == 0
-        assert (here / "talk.md").read_text().startswith("---\ntitle: A talk")
+        assert (here / "talk.md").read_text(encoding="utf-8").startswith("---\ntitle: A talk")
 
     def test_rtl(self, here):
         a_markdown_deck(here / "talk.md")
         main(["render", "talk.md", "--dir", "rtl"])
-        assert 'dir="rtl"' in (here / "talk.html").read_text()
+        assert 'dir="rtl"' in (here / "talk.html").read_text(encoding="utf-8")
 
     def test_a_file_that_is_not_there(self, here, capsys):
         assert main(["render", "nope.md"]) == 1
@@ -142,10 +142,10 @@ class TestThemes:
 
     def test_a_printed_theme_can_be_used(self, here, capsys):
         main(["themes", "slate"])
-        (here / "mine.toml").write_text(capsys.readouterr().out)
+        (here / "mine.toml").write_text(capsys.readouterr().out, encoding="utf-8")
         a_markdown_deck(here / "talk.md")
         assert main(["render", "talk.md", "--theme", "mine.toml"]) == 0
-        assert "#334155" in (here / "talk.html").read_text()
+        assert "#334155" in (here / "talk.html").read_text(encoding="utf-8")
 
 
 class TestExport:

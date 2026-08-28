@@ -9,6 +9,7 @@ from pathlib import Path
 
 from . import nbio
 from .blocks import MIME, slide_payload
+from .console import say
 from .markup import clean_html, inline, trim_text
 from .model import Slide
 
@@ -51,7 +52,7 @@ class Deck:
 
     def warn(self, message: str) -> None:
         self.warnings.append(message)
-        print(f"  ! {message}", file=sys.stderr)
+        say(f"  ! {message}", sys.stderr)
 
     def flush(self) -> None:
         if not self.current.is_empty:

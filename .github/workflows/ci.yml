@@ -45,6 +45,33 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: pytest -q --cov=pypresent --cov-report=term-missing
 
+  narrow-locale:
+    # A deck carries arrows, a middle dot and often Hebrew.  Everything here
+    # works when the locale happens to be UTF-8, which on a Linux runner it
+    # always is - so the one environment that finds an unencodable byte is the
+    # Windows job, hours later and in a stack trace.  This finds it in seconds.
+    runs-on: ubuntu-latest
+    env:
+      LC_ALL: C
+      LANG: C
+      PYTHONUTF8: "0"            # do not let python quietly rescue it
+      PYTHONCOERCECLOCALE: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - name: The encoding python would default to
+        run: python -c "import locale, sys; print(locale.getpreferredencoding(False), sys.flags.utf8_mode)"
+      - run: pytest -q
+      - name: And the command itself, announcing a right-to-left deck
+        run: |
+          pypresent render demos/03-rtl.md -o /tmp/rtl.html
+          # escaped, because under this locale python decodes -c as ascii too
+          python -c "d=open('/tmp/rtl.html',encoding='utf-8').read(); assert '\u05de\u05e6\u05d2\u05ea' in d"
+
   render:
     # the demos are the end-to-end test: every one of them has to build, on a
     # runner with nothing set up but this package
