@@ -1,9 +1,11 @@
 # pypresent
 
-**The notebook is the slides.** `pypresent` turns a Jupyter notebook — or a plain
-markdown file — into one self-contained HTML deck: no server, no build folder, no
-`_files/` directory, nothing to upload. One file you can mail, open from a memory
-stick, or commit next to the notebook it came from.
+**The notebook is the slides.** `pypresent` turns a Jupyter notebook into one
+self-contained HTML deck: no server, no build folder, no `_files/` directory,
+nothing to upload. One file you can mail, open from a memory stick, or commit
+next to the notebook it came from.
+
+And the deck never pastes the code — it quotes the lecture, at build time.
 
 [![CI](https://github.com/Barakkol33/pypresent/actions/workflows/ci.yml/badge.svg)](https://github.com/Barakkol33/pypresent/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/pypresent.svg)](https://pypi.org/project/pypresent/)
@@ -15,35 +17,7 @@ pip install pypresent            # rendering only - no Jupyter needed
 pip install "pypresent[jupyter]" # and executing the notebooks
 ```
 
-## The shortest version
-
-A markdown file is already a deck:
-
-```bash
-pypresent render talk.md         # -> talk.html
-```
-
-Headings and `---` lines cut it into slides, and the front matter says the rest:
-
-```markdown
----
-title: A talk
-theme: office
----
-
-# A talk
-
-The lead line under the title.
-
----
-
-## What it does
-
-- the code on the slide is the code that ran
-- the number on the slide is the number it printed
-```
-
-## The point of it, for a notebook
+## The point of it
 
 A lecture notebook and its deck usually drift apart: the code is pasted onto a
 slide, the number beside it was true three runs ago, and the chart is a PNG
@@ -124,7 +98,7 @@ one, print it as a file you can edit:
 ```bash
 pypresent themes                 # what there is
 pypresent themes dark > mine.toml
-pypresent render talk.md --theme mine.toml
+pypresent build --theme mine.toml
 ```
 
 `css=` is still there for the one selector no token covers.
@@ -145,10 +119,23 @@ Python does not read right to left.
 | `pypresent build --skip-source-run` | leave the source notebook alone |
 | `pypresent build --skip-slides-run` | check and render the stored outputs |
 | `pypresent render` | render only, no kernel and no check |
-| `pypresent render -f md` | the same slides as markdown |
 | `pypresent check` | what has drifted, said and not corrected |
 | `pypresent export --mode nb --format html` | the source notebook through nbconvert |
 | `pypresent themes [name]` | the built-in themes |
+
+## It also takes a markdown file
+
+A `.md` file works as a source, cut into slides by its headings and `---` lines,
+with a front matter block declaring the deck. It quotes nothing — there is no
+notebook to quote — so it is the lesser half of this, but it is there when a talk
+has no code in it:
+
+```bash
+pypresent render talk.md
+```
+
+`--format md` writes slides back out the same way. See
+[the docs](docs/README.md#writing-slides).
 
 ## Documentation
 

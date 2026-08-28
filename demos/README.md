@@ -1,6 +1,11 @@
 # Demos
 
-Every capability, as a deck you can open. Build them all:
+Every capability, as a deck you can open.
+[`05-notebook-slides.ipynb`](05-notebook-slides.ipynb) is the one to look at
+first — it is the case the library exists for. The rest are markdown, because a
+markdown file is the shortest way to show a feature.
+
+Build them all:
 
 ```bash
 pip install -e ".[dev]"

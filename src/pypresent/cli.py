@@ -64,7 +64,7 @@ def load(args) -> Presentation | None:
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="pypresent",
-        description="Slides from a notebook or a markdown file, as one HTML file.")
+        description="Slides from a Jupyter notebook, as one self-contained HTML file.")
     p.add_argument("--version", action="version", version=f"pypresent {__version__}")
     sub = p.add_subparsers(dest="command")
 

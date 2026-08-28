@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "pypresent"
 dynamic = ["version"]
-description = "Slides from a Jupyter notebook or a markdown file, as one self-contained HTML file."
+description = "Slides from a Jupyter notebook, quoting its code and output, as one self-contained HTML file."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]

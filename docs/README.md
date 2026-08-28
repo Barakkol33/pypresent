@@ -3,7 +3,7 @@
 Everything on one page. [The project README](../README.md) is the short version;
 [`demos/`](../demos/) is the same thing as decks you can open.
 
-- [Quickstart](#quickstart) — install, and a deck from markdown or a notebook
+- [Quickstart](#quickstart) — install, and a deck from a notebook
 - [Writing slides](#writing-slides) — every block, and what it is for
 - [Themes](#themes) — every token, and how to ship your own
 - [The command line](#the-command-line) — every command and flag
@@ -16,51 +16,12 @@ Everything on one page. [The project README](../README.md) is the short version;
 ### Install
 
 ```bash
-pip install pypresent              # render a stored notebook or a markdown file
-pip install "pypresent[jupyter]"   # and execute notebooks (nbclient, nbconvert)
+pip install pypresent              # render a stored notebook
+pip install "pypresent[jupyter]"   # and execute one (nbclient, nbconvert)
 ```
 
 Rendering needs nothing but Python: a notebook is a JSON file, and everything a
 deck quotes is already in it. Jupyter is only needed to *run* one.
-
-### A deck from markdown, in one minute
-
-```markdown
----
-title: A talk
-theme: office
-date: March 2026
----
-
-## A talk
-
-The line under the title on the cover.
-
----
-
-### What it does
-
-- one point
-- another, with `code` in it
-- a third
-
----
-
-### And some code
-
-```python
-def tokenize(text):
-    return text.lower().split()
-```
-```
-
-```bash
-pypresent render talk.md
-```
-
-`talk.html` is beside it: one file, no assets folder. Open it and use `→` /
-`space` to move, `f` for fullscreen, `home` / `end` for the ends. The slide
-number is in the URL, so a link goes to a slide.
 
 ### A deck from a notebook
 
@@ -69,7 +30,7 @@ Two notebooks, and the deck never pastes from the lecture.
 **`talk.ipynb`** — the lecture. A cell that a slide will quote is named:
 
 ```python
-## slide: tokenize
+# slide: tokenize
 def tokenize(text):
     return text.lower().split()
 
@@ -94,7 +55,7 @@ and every cell after it is one slide:
 
 ```python
 slide('''
-### Tokenizing
+## Tokenizing
 
 - split on whitespace, lowercased
 - **three** tokens out of that sentence
@@ -137,24 +98,13 @@ slides about and the lecture has not changed.
 
 ## Writing slides
 
-### The two ways in
+### How a notebook is cut into slides
 
-#### A markdown file
-
-A heading up to `--split-level` (3 by default, so `###`) starts a slide and
-names it. A `---` line starts one without a name. Everything else — paragraphs,
-bullets, fenced code, tables, blockquotes, images — lands on the slide that is
-open.
-
-A leading `---` block of `key: value` lines is front matter, not the first
-slide. It can set `title`, `date`, `lang`, `direction`, `theme`, `split_level`
-and `output`.
-
-#### A notebook
-
-The same rules apply to markdown cells, with two differences: `---` is an
-ordinary horizontal rule (write `<!-- slide -->` for a break), and code cells
-put their source and their output on the open slide.
+A markdown heading up to `--split-level` (3 by default, so `###`) starts a slide
+and names it; `<!-- slide -->` starts one without a name. Everything else —
+paragraphs, bullets, fenced code, tables, blockquotes, images — lands on the
+slide that is open, and so do the source and output of the code cells that
+follow it.
 
 Cell tags decide what a code cell contributes:
 
@@ -211,7 +161,7 @@ The source notebook names a cell with a comment and says nothing else about the
 deck:
 
 ```python
-## slide: tokenize
+# slide: tokenize
 GENRES = ['a', 'b']
 
 def tokenize(text):
@@ -278,6 +228,42 @@ title rule, the cover band, which arrow key goes forward — and switches to a
 Hebrew-first font stack, while keeping code, output and tables of numbers left
 to right.
 
+### A markdown file, for a talk with no code in it
+
+A `.md` file is a source too. The cut is the same, with one difference: a `---`
+line ends a slide, the way most markdown slide tools mark a break, so an
+existing deck usually just works.
+
+```bash
+pypresent render talk.md
+```
+
+A leading `---` block of `key: value` lines is front matter rather than the
+first slide, and declares the deck the way a notebook's first cell does:
+`title`, `date`, `lang`, `direction`, `theme`, `split_level`, `output`.
+
+```markdown
+---
+title: A talk
+theme: office
+---
+
+# A talk
+
+The line under the title on the cover.
+
+---
+
+## What it does
+
+- one point
+- another, with `code` in it
+```
+
+It quotes nothing — there is no source notebook to quote — so `code()`,
+`result()` and `figure()` have no meaning here. `--format md` writes slides back
+out in the same shape, which `pypresent` reads straight back in.
+
 ---
 
 ## Themes
@@ -297,12 +283,14 @@ Presentation(..., theme='themes/house-style.toml')     # a file
 Presentation(..., theme=Theme.named('slate').replace(bullet_size='4.6cqh'))
 ```
 
-From the command line, and in a markdown deck's front matter:
+From the command line:
 
 ```bash
-pypresent render talk.md --theme dark
-pypresent render talk.md --theme mine.toml
+pypresent build --theme dark
+pypresent build --theme mine.toml
 ```
+
+and, for a markdown deck, in its front matter:
 
 ```markdown
 ---
@@ -350,7 +338,7 @@ bullet_size = "4.4cqh"
 bullet_gap  = "2.8cqh"
 radius      = "0"
 
-## the last resort, for the one selector no token covers
+# the last resort, for the one selector no token covers
 css = """
 .slide.cover .title { text-transform: uppercase; letter-spacing: .06em }
 """

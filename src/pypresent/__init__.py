@@ -20,10 +20,16 @@ and every cell after it is a slide::
     - the number on the slide is the number it printed
     ''', code('tokenize'), result('tokenize'))
 
-Then ``pypresent build`` executes the notebook, says what has drifted, and
-writes one self-contained HTML file - or ``--format md`` writes the same slides
-as markdown.  A plain markdown file works as a source too, cut into slides by
-its headings and ``---`` lines.
+``code()``, ``result()`` and ``figure()`` are read out of the source notebook at
+build time, so the listing, the number and the chart on a slide are the ones
+that actually ran, and a name that stops matching is reported rather than going
+quietly stale.
+
+Then ``pypresent build`` runs the source notebook, runs this one, says what has
+drifted, and writes one self-contained HTML file.
+
+(A plain markdown file works as a source too, cut into slides by its headings
+and ``---`` lines.  It quotes nothing, so it is the lesser half of this.)
 """
 
 from __future__ import annotations
