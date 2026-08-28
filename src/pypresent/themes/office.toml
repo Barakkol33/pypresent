@@ -1,0 +1,23 @@
+# office: the palette of a default PowerPoint deck - blue accents on white,
+# for a room that expects a corporate slide and should not notice the tool.
+base = "warm"
+
+accent = "#0f6cbd"
+accent2 = "#2b579a"
+ink = "#242424"
+muted = "#7a7a7a"
+line = "#e1e1e1"
+canvas = "#ffffff"
+backdrop = "#e6e6e6"
+soft = "#eef4fb"
+inline_ink = "#0b4d87"
+code_bg = "#1f1f1f"
+code_fg = "#f2f2f2"
+out_bg = "#f5f5f5"
+out_fg = "#2b2b2b"
+row_alt = "#f2f7fd"
+head_fg = "#ffffff"
+
+font = "\"Segoe UI\", Calibri, Carlito, system-ui, -apple-system, sans-serif"
+font_rtl = "\"Segoe UI\", Calibri, \"Noto Sans Hebrew\", \"Arial Hebrew\", Carlito, system-ui, sans-serif"
+stage_shadow = "0 0 30px rgba(0,0,0,.14)"

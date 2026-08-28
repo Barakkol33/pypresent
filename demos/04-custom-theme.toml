@@ -1,0 +1,46 @@
+# A theme written by hand, to show what a token can reach.
+#
+#     pypresent render 01-every-block.md --theme 04-custom-theme.toml
+#
+# Start yours the easy way instead:  pypresent themes slate > mine.toml
+
+base = "slate"
+
+# a single-hue palette, nearly monochrome, with one warm accent
+accent = "#b45309"
+accent2 = "#1c1917"
+ink = "#1c1917"
+muted = "#78716c"
+line = "#e7e5e4"
+canvas = "#fafaf9"
+backdrop = "#d6d3d1"
+soft = "#f5f5f4"
+inline_ink = "#b45309"
+code_bg = "#1c1917"
+code_fg = "#fafaf9"
+out_bg = "#f5f5f4"
+out_fg = "#44403c"
+row_alt = "#f5f5f4"
+head_fg = "#fafaf9"
+
+# heavier titles, a hairline rule instead of the two-tone one, square bullets
+title_weight = "700"
+cover_title_weight = "700"
+title_tracking = "-.03em"
+rule = ".18cqh"
+bullet_glyph = "\"\\25AA\""
+subbullet_glyph = "\"\\2014\""
+bullet_gap = "3.0cqh"
+radius = "0"
+
+# flat: no shadow anywhere
+frame_shadow = "none"
+stage_shadow = "0 0 0 1px #d6d3d1"
+frame_width = ".3cqh"
+
+# and the last resort, for what no token covers
+css = """
+.title-rule { background: var(--pp-accent) }
+.slide.cover .title { text-transform: uppercase }
+.footer .num { font-weight: 700; color: var(--pp-accent) }
+"""

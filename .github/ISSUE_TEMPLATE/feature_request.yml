@@ -1,0 +1,21 @@
+name: Something it cannot do
+description: A slide you cannot write, or a look you cannot get
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What you are trying to put on a slide
+      description: The talk, not the API. What the slide has to show is the thing.
+    validations:
+      required: true
+  - type: textarea
+    id: workaround
+    attributes:
+      label: What you do instead today
+      description: "Including `css=`, if that is what you reached for."
+  - type: textarea
+    id: shape
+    attributes:
+      label: What it might look like
+      description: A block, a token, a flag - a guess is fine and often useful.

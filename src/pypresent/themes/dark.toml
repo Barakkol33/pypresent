@@ -1,0 +1,23 @@
+# dark: for a bright room with a dim projector, and for a screenshot that will
+# sit in a dark README.  Code keeps its own darker box so it still reads as code.
+base = "warm"
+
+accent = "#e8a33d"
+accent2 = "#5fb3c6"
+ink = "#ece7df"
+muted = "#948d82"
+line = "#3a352f"
+canvas = "#1c1a17"
+backdrop = "#0e0d0c"
+soft = "#2c2823"
+inline_ink = "#f0c98a"
+code_bg = "#12100e"
+code_fg = "#ece7df"
+out_bg = "#26231f"
+out_fg = "#d8d2c8"
+row_alt = "#242019"
+head_fg = "#12100e"
+frame = "#2c2823"
+
+frame_shadow = "0 1.2cqh 3cqh rgba(0,0,0,.55)"
+stage_shadow = "0 0 40px rgba(0,0,0,.6)"

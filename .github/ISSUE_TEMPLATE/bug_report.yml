@@ -1,0 +1,32 @@
+name: Something renders wrong
+description: A deck that came out other than you expected
+labels: [bug]
+body:
+  - type: textarea
+    id: source
+    attributes:
+      label: The markdown, or the notebook cell
+      description: The smallest input that shows it. This is the most useful part.
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what you got
+      description: A screenshot of the slide says more than a description of it.
+    validations:
+      required: true
+  - type: input
+    id: command
+    attributes:
+      label: The command you ran
+      placeholder: pypresent build talk-slides.ipynb --theme dark
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "`pypresent --version`, and your Python and OS"
+      placeholder: pypresent 0.1.0, Python 3.12, Ubuntu 24.04
+    validations:
+      required: true

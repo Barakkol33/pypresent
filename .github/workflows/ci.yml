@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pipx install ruff
+      - run: ruff check .
+
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        include:
+          # one run each on the other two platforms: the paths and the encodings
+          # are what differ, and those do not need the whole matrix
+          - os: macos-latest
+            python-version: "3.12"
+          - os: windows-latest
+            python-version: "3.12"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - run: pytest -q --cov=pypresent --cov-report=term-missing
+
+  render:
+    # the demos are the end-to-end test: every one of them has to build, on a
+    # runner with nothing set up but this package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[jupyter]"
+      - name: Build every demo
+        run: ./demos/build.sh
+      - name: Each one has to be a deck, and one file
+        run: |
+          for deck in demos/out/*.html; do
+            grep -q "<!doctype html>" "$deck"
+            grep -q "<section class=\"slide" "$deck"
+            # self-contained: the page may *link* out, but must fetch nothing -
+            # no remote script, image or stylesheet, and no <link> at all
+            ! grep -qE 'src="https?://' "$deck"
+            ! grep -q "<link" "$deck"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: demo-decks
+          path: demos/out/
+          retention-days: 14
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build twine
+      - run: python -m build
+      - run: twine check --strict dist/*
+      - name: The wheel has to carry its assets and themes
+        run: |
+          python -m zipfile -l dist/*.whl | tee /tmp/wheel.txt
+          grep -q "pypresent/assets/deck.css" /tmp/wheel.txt
+          grep -q "pypresent/assets/deck.js" /tmp/wheel.txt
+          grep -q "pypresent/themes/warm.toml" /tmp/wheel.txt
+      - name: And a deck has to build from the wheel alone
+        run: |
+          python -m venv /tmp/fresh
+          /tmp/fresh/bin/pip install dist/*.whl
+          /tmp/fresh/bin/pypresent render demos/01-every-block.md -o /tmp/out.html
+          test -s /tmp/out.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
