@@ -268,6 +268,3 @@ def available() -> list[str]:
 def deck_js() -> str:
     return (ASSETS / "deck.js").read_text(encoding="utf-8")
 
-
-def probe_js() -> str:
-    return (ASSETS / "probe.js").read_text(encoding="utf-8")

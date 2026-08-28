@@ -23,18 +23,19 @@ from .context import using
 from .deck import CONFIG_MIME, markdown_meta, parse
 from .render.html import render_deck
 from .render.markdown import render_markdown
-from .theme import Theme, probe_js
+from .theme import Theme
 
 HEBREW = re.compile(r"[֐-׿]")
 LATIN = re.compile(r"[A-Za-z]")
 SLIDE_CALL = re.compile(r"(?:\A|\n)[ \t]*slide[ \t]*\(.*", re.S)
+ANSI = re.compile(r"\x1b\[[0-9;]*m")        # a traceback a terminal already coloured
 
 # What a stored declaration carries back to the builder.  `slides` is not among
 # them - it is the notebook being read - and `source` travels as a path relative
 # to it, so a checkout anywhere still resolves.
 CARRIED = ("title", "source", "output", "lang", "direction", "date", "split_level",
-           "images", "max_bullets", "max_words", "fit_floor", "sparse", "hint",
-           "fonts", "css", "theme", "chrome", "kernel", "audit_size")
+           "images", "max_bullets", "max_words", "hint", "fonts", "css", "theme",
+           "kernel")
 
 
 def _short(path: Path) -> str:
@@ -50,7 +51,7 @@ class Presentation:
     """A deck: the files it is made of, and how it is rendered.
 
     The slide notebook declares one of these in its first cell, and every
-    action - build, check, render, audit, export - is a method on it.  Nothing
+    action - build, check, render, export - is a method on it.  Nothing
     about any particular deck lives in the library, so two presentations can be
     built side by side without either knowing about the other::
 
@@ -80,11 +81,6 @@ class Presentation:
     # what `check` complains about: a bullet is a headline, not a sentence
     max_bullets: int = 5
     max_words: int = 20
-    # what `audit` complains about, as a fraction of full size
-    fit_floor: float = 0.90                   # below this the room cannot read it
-    sparse: float = 0.15                      # above nothing - a slide worth merging
-    audit_size: tuple[int, int] = (1920, 1080)
-    chrome: str = "google-chrome-stable"
     # "auto" runs a notebook with the very interpreter pypresent is installed in,
     # which needs no kernelspec registered anywhere - so a fresh virtualenv and a
     # CI runner both work with nothing set up.  Name one to use it instead.
@@ -123,7 +119,6 @@ class Presentation:
         self.direction = self.direction or ("rtl" if self.lang == "he" else "ltr")
         if self.direction not in ("ltr", "rtl"):
             raise ValueError(f"direction must be ltr or rtl, not {self.direction!r}")
-        self.audit_size = tuple(self.audit_size)
         self.theme = Theme.resolve(self.theme)
         if self.activate:
             _activate(self)
@@ -163,7 +158,6 @@ class Presentation:
 
     def payload(self) -> dict:
         d = {k: getattr(self, k) for k in CARRIED}
-        d["audit_size"] = list(d["audit_size"])
         d["theme"] = self.theme.to_dict()
         # paths as the notebook wrote them: both are absolute by now, and a
         # checkout somewhere else has to resolve them against its own folder
@@ -338,12 +332,50 @@ class Presentation:
                 else:
                     os.environ["JUPYTER_PATH"] = was
 
-    def _execute(self, nb, where: Path) -> None:
+    def _execute(self, nb, where: Path, what: str = "") -> bool:
+        """Run a notebook.  True if it ran; False if a cell raised, said plainly.
+
+        A cell that raises is an ordinary thing to happen during a build - a
+        missing import, a moved data file - and what you need is the cell and
+        the error, not nbclient's own traceback through this call stack on top
+        of the notebook's.
+        """
         from nbclient import NotebookClient
+        from nbclient.exceptions import CellExecutionError, CellTimeoutError
 
         with self._kernel() as kernel:
-            NotebookClient(nb, timeout=1800, kernel_name=kernel,
-                           resources={"metadata": {"path": str(where)}}).execute()
+            client = NotebookClient(nb, timeout=1800, kernel_name=kernel,
+                                    resources={"metadata": {"path": str(where)}})
+            try:
+                client.execute()
+            except (CellExecutionError, CellTimeoutError) as failure:
+                self._report_failure(nb, failure, what or "the notebook")
+                return False
+        return True
+
+    @staticmethod
+    def _report_failure(nb, failure, what: str) -> None:
+        """The cell that stopped the run, and why - and nothing else.
+
+        The exception does not carry the cell, but the notebook does: the run
+        left an error output on it, which is also where the colour codes a
+        terminal already interpreted end up written down.
+        """
+        ename = getattr(failure, "ename", "") or ""
+        evalue = getattr(failure, "evalue", "") or ""
+        why = f"{ename}: {evalue}".strip(": ") or ANSI.sub(
+            "", str(failure)).strip().splitlines()[-1]
+        print(f"{what} stopped on a cell - {ANSI.sub('', why)}", file=sys.stderr)
+
+        failed = next((c for c in nb.cells
+                       if any(o.get("output_type") == "error"
+                              for o in c.get("outputs", []))), None)
+        if failed is None:
+            return
+        lines = nbio.source(failed).strip().splitlines()
+        shown = lines[:6] + (["…"] if len(lines) > 6 else [])
+        for line in shown:
+            print(f"    {line}", file=sys.stderr)
 
     def run_source(self) -> int:
         """Execute the source notebook in place, so what the deck quotes is current.
@@ -351,8 +383,9 @@ class Presentation:
         `code()`, `result()` and `figure()` are resolved when the slide notebook
         runs, out of whatever the source last printed - so a source that has
         been edited but not re-run puts new code beside an old number on a
-        slide.  This is the one path that writes it, and it only runs when
-        asked, because it costs a full kernel run of the whole thing.
+        slide.  Which is why a build does this first, and why skipping it is a
+        flag you have to type.  This is the one path that writes the source
+        notebook.
         """
         import nbformat
 
@@ -360,7 +393,8 @@ class Presentation:
             print("this presentation declares no source notebook to run", file=sys.stderr)
             return 1
         nb = nbformat.read(self.source, as_version=4)
-        self._execute(nb, self.source.parent)
+        if not self._execute(nb, self.source.parent, self.source.name):
+            return 1                      # and the notebook on disk is left alone
         nbformat.write(nb, self.source)
         print(self.source.name)
         return 0
@@ -368,11 +402,21 @@ class Presentation:
     # the old name, for a notebook written against 0.1
     run_lecture = run_source
 
-    def build(self, run: bool = True, source: bool = False, fmt: str = "html") -> int:
-        """Execute the slide notebook, check it, then render it.
+    def build(self, run_source: bool = True, run_slides: bool = True,
+              fmt: str = "html") -> int:
+        """Run both notebooks, check the deck, render it.
 
-        `source` runs the source notebook first: the deck quotes what it
-        printed, so that is the order in which the two have to run.
+        The source notebook runs first and the slide notebook second, because
+        the deck quotes what the source printed: `code()`, `result()` and
+        `figure()` are resolved while the slide notebook executes, out of
+        whatever the source last wrote.  Running them the other way round, or
+        not running the source at all, is how new code ends up beside an old
+        number on a slide - so a full build does both, every time.
+
+        Either run can be skipped when you know it is not needed:
+        `run_source=False` while you are only moving slides about,
+        `run_slides=False` to check and render what is already stored.  A deck
+        that declares no source notebook simply has nothing to run first.
         """
         if not self.slides.exists():
             print(f"no such file: {self.slides}", file=sys.stderr)
@@ -383,12 +427,13 @@ class Presentation:
         # only the build needs jupyter installed; a notebook importing this does not
         import nbformat
 
-        if source and self.run_source():
+        if run_source and self.source is not None and self.run_source():
             return 1
         nb = nbformat.read(self.slides, as_version=4)
         deck = self
-        if run:
-            self._execute(nb, self.base)
+        if run_slides:
+            if not self._execute(nb, self.base, self.slides.name):
+                return 1
             nbformat.write(nb, self.slides)
             print(self.slides.name)
             # the notebook declares itself as it runs, so the parameters to
@@ -396,55 +441,6 @@ class Presentation:
             deck = Presentation.from_notebook(self.slides, **self._override)
         deck.check(nb)
         return deck.render(fmt)
-
-    def audit(self, width: int = 0, height: int = 0) -> int:
-        """Did every slide fit?
-
-        The deck shrinks an over-full slide rather than breaking it, so a slide
-        that says too much just becomes unreadable - which only a real browser
-        can see.  This opens the built deck in headless Chrome and reports the
-        scale each one had to be squeezed to.
-        """
-        w = width or self.audit_size[0]
-        h = height or self.audit_size[1]
-        if not self.output.exists():
-            print(f"no such deck: {self.output}", file=sys.stderr)
-            return 1
-        probe = f"<script>\n{probe_js()}\n</script>"
-        page = self.output.read_text(encoding="utf-8").replace("</body>", probe + "</body>")
-        with tempfile.TemporaryDirectory() as tmp:
-            here = Path(tmp) / "probe.html"
-            here.write_text(page, encoding="utf-8")
-            try:
-                dom = subprocess.run(
-                    [self.chrome, "--headless=new", "--disable-gpu", "--no-sandbox",
-                     f"--window-size={w},{h}", "--virtual-time-budget=4000",
-                     "--dump-dom", here.as_uri()],
-                    capture_output=True, text=True, timeout=180).stdout
-            except FileNotFoundError:
-                print(f"no such browser: {self.chrome}  (set chrome= on the presentation)",
-                      file=sys.stderr)
-                return 1
-
-        found = re.search(r"<title>AUDIT\n(.*?)</title>", dom, re.S)
-        if not found:
-            print("probe did not run; chrome output:\n" + dom[:800], file=sys.stderr)
-            return 1
-
-        bad = 0
-        print(f"{self.output.name} at {w}x{h}")
-        for line in found.group(1).splitlines():
-            num, scale, fill, title = [*line.split("\t"), "", "", ""][:4]
-            scale, fill = float(scale), float(fill)
-            if scale < self.fit_floor:
-                bad += 1
-                print(f"  {num:>3}  scale {scale:.3f}  {title}  <<< TOO SMALL")
-            elif scale < 0.999:
-                print(f"  {num:>3}  scale {scale:.3f}  {title}  <<< shrunk a little")
-            elif fill < self.sparse:
-                print(f"  {num:>3}  fills {fill:.0%}  {title}  <<< nearly empty")
-        print(f"{bad} slide(s) below {self.fit_floor:.2f}" if bad else "every slide fits")
-        return 1 if bad else 0
 
     def convert(self, notebooks, fmt: str = "md", code: bool | None = None) -> int:
         """Notebooks straight through nbconvert, into the deck's own output folder.

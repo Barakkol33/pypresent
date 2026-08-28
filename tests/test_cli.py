@@ -73,17 +73,43 @@ class TestBuild:
         assert main(["build", "talk.md"]) == 0
         assert (here / "talk.html").exists()
 
-    def test_a_notebook_with_no_run_renders_the_stored_outputs(self, here):
+    def test_skipping_both_runs_renders_the_stored_outputs(self, here):
         write_notebook(here / "t-slides.ipynb",
                        [slide_cell([{"kind": "md", "text": "# One\n"}])])
-        assert main(["build", "t-slides.ipynb", "--no-run"]) == 0
+        assert main(["build", "t-slides.ipynb",
+                     "--skip-source-run", "--skip-slides-run"]) == 0
         assert (here / "t-slides.html").exists()
 
     def test_the_only_slide_notebook_here_needs_no_naming(self, here):
         write_notebook(here / "t-slides.ipynb",
                        [slide_cell([{"kind": "md", "text": "# One\n"}])])
-        assert main(["build", "--no-run"]) == 0
+        assert main(["build", "--skip-source-run", "--skip-slides-run"]) == 0
         assert (here / "t-slides.html").exists()
+
+    def test_a_deck_with_no_source_notebook_has_nothing_to_run_first(self, here):
+        # the source run is the default, and a deck that declares none must not
+        # fail on it - it simply has nothing to run before the slide notebook
+        write_notebook(here / "t-slides.ipynb",
+                       [slide_cell([{"kind": "md", "text": "# One\n"}])])
+        assert main(["build", "t-slides.ipynb", "--skip-slides-run"]) == 0
+        assert (here / "t-slides.html").exists()
+
+    def test_both_flags_reach_the_presentation(self, here, monkeypatch):
+        seen = {}
+        write_notebook(here / "t-slides.ipynb",
+                       [slide_cell([{"kind": "md", "text": "# One\n"}])])
+
+        def spy(self, run_source=True, run_slides=True, fmt="html"):
+            seen.update(run_source=run_source, run_slides=run_slides)
+            return 0
+
+        monkeypatch.setattr("pypresent.presentation.Presentation.build", spy)
+        main(["build", "t-slides.ipynb"])
+        assert seen == {"run_source": True, "run_slides": True}
+        main(["build", "t-slides.ipynb", "--skip-source-run"])
+        assert seen == {"run_source": False, "run_slides": True}
+        main(["build", "t-slides.ipynb", "--skip-slides-run"])
+        assert seen == {"run_source": True, "run_slides": False}
 
 
 class TestCheck:

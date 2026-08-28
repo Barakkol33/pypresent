@@ -5,8 +5,8 @@ The point of the demo is that a deck quotes a *lecture* rather than pasting it -
 so the demo needs a lecture with real stored outputs: a printed number and a
 drawn chart.  Rather than ask everyone who clones this to have a kernel and
 matplotlib, the notebooks are generated here once, with their outputs already
-in them, and committed.  `pypresent build --no-run` then renders the deck with
-no kernel anywhere near it, which is itself the thing being demonstrated.
+in them, and committed.  A build with both runs skipped then renders the deck
+with no kernel anywhere near it, which is itself the thing being demonstrated.
 
     python demos/make_notebook_demo.py      # needs matplotlib; nothing else does
 """

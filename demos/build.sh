@@ -35,9 +35,9 @@ fi
 
 if [[ "$what" == all || "$what" == notebook ]]; then
   echo "== a deck that quotes its lecture =="
-  # --no-run renders the outputs already stored in the notebooks, so this needs
-  # no kernel; drop it to execute the slide notebook for real.
-  $PYPRESENT build 05-notebook-slides.ipynb --no-run
+  # Both notebooks are committed already executed, so skipping both runs needs
+  # no kernel at all.  Drop the two flags to build it for real.
+  $PYPRESENT build 05-notebook-slides.ipynb --skip-source-run --skip-slides-run
 fi
 
 echo

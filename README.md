@@ -141,20 +141,14 @@ Python does not read right to left.
 
 | | |
 | --- | --- |
-| `pypresent build` | run the slide notebook, check it, render the deck |
-| `pypresent build --no-run` | skip the kernel; check and render the stored outputs |
-| `pypresent build --source` | run the source notebook first, then the deck |
+| `pypresent build` | run the source notebook, then the slide notebook, check, render |
+| `pypresent build --skip-source-run` | leave the source notebook alone |
+| `pypresent build --skip-slides-run` | check and render the stored outputs |
 | `pypresent render` | render only, no kernel and no check |
 | `pypresent render -f md` | the same slides as markdown |
 | `pypresent check` | what has drifted, said and not corrected |
-| `pypresent audit` | did any slide have to be shrunk to fit? |
 | `pypresent export --mode nb --format html` | the source notebook through nbconvert |
 | `pypresent themes [name]` | the built-in themes |
-
-`audit` is the one that earns its keep: the deck shrinks an over-full slide
-rather than breaking it, so a slide that says too much just becomes unreadable.
-`audit` opens the built deck in headless Chrome and reports the scale each slide
-had to be squeezed to.
 
 ## Documentation
 

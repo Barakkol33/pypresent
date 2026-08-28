@@ -85,21 +85,21 @@ def parser() -> argparse.ArgumentParser:
         parser.add_argument("-o", "--output", type=Path, default=None)
         return parser
 
+    # A full build runs the source notebook and then the slide notebook, in that
+    # order, so what the deck quotes is what the source last printed.  Both flags
+    # take a run away; neither adds one.
     b = common(sub.add_parser(
-        "build", help="run the slide notebook, check it, render the deck"))
-    b.add_argument("--no-run", action="store_true",
-                   help="render the stored outputs as they are")
-    b.add_argument("--source", action="store_true",
-                   help="run the source notebook first, so what the deck quotes is current")
+        "build", help="run both notebooks, check the deck, render it"))
+    b.add_argument("--skip-source-run", action="store_true",
+                   help="do not run the source notebook; quote what it last printed")
+    b.add_argument("--skip-slides-run", action="store_true",
+                   help="do not run the slide notebook; check and render what is stored")
     b.add_argument("-f", "--format", dest="fmt", choices=["html", "md"], default="html")
 
     r = common(sub.add_parser("render", help="render the stored outputs, without executing"))
     r.add_argument("-f", "--format", dest="fmt", choices=["html", "md"], default="html")
 
     common(sub.add_parser("check", help="what has drifted, said and not corrected"))
-
-    a = common(sub.add_parser("audit", help="did any slide have to be shrunk?"))
-    a.add_argument("--size", nargs=2, type=int, metavar=("W", "H"), default=(0, 0))
 
     # two flags, not four command names: what to write, and how to write it
     e = common(sub.add_parser("export", help="the deck or the source notebook, as html or md"))
@@ -111,10 +111,10 @@ def parser() -> argparse.ArgumentParser:
                    help="nbconvert: keep the source cells (the default for html)")
     e.add_argument("--no-code", dest="code", action="store_false",
                    help="nbconvert: outputs only (the default for md)")
-    e.add_argument("--no-run", action="store_true",
-                   help="slide+html: render the stored outputs as they are")
-    e.add_argument("--source", action="store_true",
-                   help="slide: run the source notebook first, then the deck")
+    e.add_argument("--skip-source-run", action="store_true",
+                   help="slide+html: do not run the source notebook")
+    e.add_argument("--skip-slides-run", action="store_true",
+                   help="slide+html: do not run the slide notebook")
     e.add_argument("--also", nargs="*", default=[], metavar="NOTEBOOK",
                    help="further notebooks to convert beside the one chosen")
 
@@ -151,7 +151,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "export":
         if args.mode == "slide":
             if args.fmt == "html":
-                return deck.build(run=not args.no_run, source=args.source)
+                return deck.build(run_source=not args.skip_source_run,
+                                  run_slides=not args.skip_slides_run)
             return deck.render("md")
         if deck.source is None:
             print("this presentation declares no source notebook", file=sys.stderr)
@@ -159,15 +160,14 @@ def main(argv: list[str] | None = None) -> int:
         return deck.convert([deck.source] + [deck._at(n) for n in args.also],
                             args.fmt, code=args.code)
     if args.command == "build":
-        return deck.build(run=not args.no_run, source=args.source, fmt=args.fmt)
+        return deck.build(run_source=not args.skip_source_run,
+                          run_slides=not args.skip_slides_run, fmt=args.fmt)
     if args.command == "render":
         return deck.render(args.fmt)
     if args.command == "check":
         said = deck.check()
         print(f"{said} thing(s) to look at" if said else "nothing to report")
         return 1 if said else 0
-    if args.command == "audit":
-        return deck.audit(*args.size)
     return deck.render()
 
 

@@ -107,26 +107,24 @@ slide('''
 Then:
 
 ```bash
-pypresent build               # run the notebook, check it, write out/talk.html
+pypresent build               # run both notebooks, check, write out/talk.html
 ```
+
+That runs `talk.ipynb` first and `talk-slides.ipynb` second — that order,
+because the deck quotes what the lecture printed.
 
 ### The loop while you are writing
 
 ```bash
-pypresent build --no-run      # skip the kernel; check and render what is stored
-pypresent render              # skip the check too - the fast one
-pypresent check               # only what has drifted
-pypresent audit               # did any slide have to shrink to fit?
+pypresent build --skip-source-run   # the lecture has not changed; only re-run the deck
+pypresent build --skip-slides-run   # neither has; just check and render what is stored
+pypresent render                    # skip the check too - the fast one
+pypresent check                     # only what has drifted
 ```
 
-`audit` needs Chrome, and is the one worth running before you present:
-
-```
-talk.html at 1920x1080
-    4  scale 0.812  Tokenizing  <<< TOO SMALL
-    9  fills 8%  A short slide  <<< nearly empty
-1 slide(s) below 0.90
-```
+A full `build` is the one to run before you present, and the flags are for the
+loop in between. Skipping the source run is the common one: you are moving
+slides about and the lecture has not changed.
 
 ### Where to go next
 
@@ -459,8 +457,8 @@ If you do reach for `css=`, these are the hooks:
 | `pre.code`, `pre.output`, `code` | code, output, inline code |
 | `.footer`, `.progress`, `.chrome`, `.hint` | the chrome |
 
-`.fit` is the box the deck scales down when a slide says too much — which is
-what `pypresent audit` measures.
+`.fit` is the box the deck scales down when a slide says too much, rather than
+letting it overflow the stage.
 
 ### Per-deck overrides
 
@@ -486,15 +484,25 @@ builds.
 
 #### `build`
 
-Execute the slide notebook, check it, render the deck.
+Run the source notebook, run the slide notebook, check the deck, render it.
+
+Both notebooks run, in that order, because the deck quotes what the source
+printed: `code()`, `result()` and `figure()` are resolved while the slide
+notebook executes, out of whatever the source last wrote. Running them the
+other way round, or not running the source at all, is how new code ends up
+beside an old number on a slide — so a full build does both, every time.
 
 | flag | |
 | --- | --- |
-| `--no-run` | skip the kernel; still check and render the stored outputs |
-| `--source` | run the source notebook first, then the deck — in that order, because the deck quotes what the source printed |
+| `--skip-source-run` | leave the source notebook alone; quote what it last printed |
+| `--skip-slides-run` | leave the slide notebook alone; check and render what is stored |
 | `-f html\|md` | what to write (default `html`) |
 
-A markdown deck has nothing to run, so `build` on one is just `render`.
+Both flags take a run away; neither adds one. Pass both and nothing is
+executed at all, which is `render` plus the check.
+
+A deck that declares no source notebook simply has nothing to run first, and a
+markdown deck has neither run, so `build` on one is just `render`.
 
 #### `render`
 
@@ -508,27 +516,6 @@ Render the stored outputs. No kernel, no check — the fast one.
 
 What has drifted, said and not corrected. Exits 1 if there is anything.
 See [writing-slides.md](#what-check-complains-about).
-
-#### `audit`
-
-Did any slide have to be shrunk to fit? The deck scales an over-full slide down
-rather than breaking it, so a slide that says too much just becomes unreadable —
-which only a real browser can see. Opens the built deck in headless Chrome.
-
-| flag | |
-| --- | --- |
-| `--size W H` | the screen to measure against (default 1920×1080) |
-
-```
-talk.html at 1920x1080
-    4  scale 0.812  Tokenizing  <<< TOO SMALL
-    7  scale 0.964  Results  <<< shrunk a little
-    9  fills 8%  A short slide  <<< nearly empty
-1 slide(s) below 0.90
-```
-
-Exits 1 if any slide is below `fit_floor`. Set `chrome=` on the presentation if
-the browser is not `google-chrome-stable`.
 
 #### `export`
 
@@ -575,8 +562,7 @@ instruction, so leaving one off keeps whatever the deck wrote down.
 ### Exit codes
 
 `0` is fine. `1` is: a file that is not there, a source that produced no slides,
-`check` finding something, `audit` finding a slide below the floor, or a Chrome
-that could not be started.
+a notebook cell that raised during a run, or `check` finding something.
 
 ---
 
@@ -607,9 +593,7 @@ deck = Presentation(
     split_level=3,
     images=True,
     max_bullets=5, max_words=20,  # what check() complains about
-    fit_floor=0.90, sparse=0.15,  # what audit() complains about
-    audit_size=(1920, 1080),
-    chrome='google-chrome-stable',
+    kernel='auto',                # 'auto' is this very interpreter
     hint='', fonts='', css='',    # per-deck overrides on top of the theme
     activate=True,                # become this notebook's active presentation
 )
@@ -622,10 +606,9 @@ directory — so a deck reads the same from wherever the build is run.
 
 | | |
 | --- | --- |
-| `deck.build(run=True, source=False, fmt='html')` | execute, check, render |
+| `deck.build(run_source=True, run_slides=True, fmt='html')` | run both, check, render |
 | `deck.render(fmt='html', output=None)` | render the stored outputs |
 | `deck.check(nb=None)` | how many things have drifted |
-| `deck.audit(width=0, height=0)` | how many slides had to shrink |
 | `deck.read_slides()` | the `Slide` objects, for doing something else with |
 | `deck.run_source()` | execute the source notebook in place |
 | `deck.convert(notebooks, fmt, code=None)` | straight through nbconvert |

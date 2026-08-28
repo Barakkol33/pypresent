@@ -42,8 +42,8 @@ and `figure()`. Look at slide 4: the chart on it is read out of the lecture's
 stored output at render time, so there is no PNG beside the deck to go stale.
 
 Both notebooks are committed already executed, so `build.sh` renders them with
-`--no-run` and needs no kernel. To regenerate them from scratch (this is the
-only thing here that needs matplotlib):
+`--skip-source-run --skip-slides-run` and needs no kernel. To regenerate them
+from scratch (this is the only thing here that needs matplotlib):
 
 ```bash
 python demos/make_notebook_demo.py
@@ -62,12 +62,3 @@ pypresent build demos/05-notebook-slides.ipynb     # for real, with a kernel
 
 The slide number is in the URL, so a link goes to a slide, and the browser's
 back button works. `ctrl+P` prints one slide per page.
-
-## Checking a deck fits
-
-```bash
-pypresent audit demos/01-every-block.md --size 1366 768
-```
-
-Needs Chrome. It reports any slide the deck had to shrink to fit — which on a
-small projector is the difference between a slide and an unreadable one.

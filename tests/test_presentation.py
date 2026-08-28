@@ -118,6 +118,69 @@ class TestRender:
         assert "<title>A talk</title>" in deck.output.read_text()
 
 
+class TestBuild:
+    """What a build runs, and in what order."""
+
+    @pytest.fixture
+    def spied(self, tmp_path, slides_notebook, source_notebook, monkeypatch):
+        """A deck whose two kernel runs are recorded rather than performed."""
+        order = []
+        deck = Presentation(slides=slides_notebook, source=source_notebook,
+                            output=tmp_path / "out.html")
+        monkeypatch.setattr(Presentation, "run_source",
+                            lambda self: order.append("source") or 0)
+        monkeypatch.setattr(Presentation, "_execute",
+                            lambda self, nb, where, what="": order.append("slides") or True)
+        return deck, order
+
+    def test_runs_the_source_first_and_the_slides_second(self, spied):
+        # that order, because the deck quotes what the source printed
+        deck, order = spied
+        assert deck.build() == 0
+        assert order == ["source", "slides"]
+
+    def test_skipping_the_source_run(self, spied):
+        deck, order = spied
+        assert deck.build(run_source=False) == 0
+        assert order == ["slides"]
+
+    def test_skipping_the_slides_run(self, spied):
+        deck, order = spied
+        assert deck.build(run_slides=False) == 0
+        assert order == ["source"]
+
+    def test_skipping_both(self, spied):
+        deck, order = spied
+        assert deck.build(run_source=False, run_slides=False) == 0
+        assert order == []
+
+    def test_a_deck_with_no_source_has_nothing_to_run_first(self, tmp_path,
+                                                            slides_notebook, monkeypatch):
+        order = []
+        monkeypatch.setattr(Presentation, "_execute",
+                            lambda self, nb, where, what="": order.append("slides") or True)
+        deck = Presentation(slides=slides_notebook, output=tmp_path / "out.html")
+        assert deck.build() == 0
+        assert order == ["slides"]
+
+    def test_a_source_run_that_fails_stops_the_build(self, spied, monkeypatch):
+        deck, order = spied
+        monkeypatch.setattr(Presentation, "run_source", lambda self: 1)
+        assert deck.build() == 1
+        assert order == []            # the slide notebook never runs on stale numbers
+
+    def test_a_markdown_deck_has_neither_run(self, tmp_path):
+        (tmp_path / "t.md").write_text("# One\n")
+        deck = Presentation(slides=tmp_path / "t.md", output=tmp_path / "out.html")
+        assert deck.build() == 0
+        assert deck.output.exists()
+
+    def test_a_file_that_is_not_there(self, tmp_path, capsys):
+        deck = Presentation(slides=tmp_path / "nope.ipynb")
+        assert deck.build() == 1
+        assert "no such file" in capsys.readouterr().err
+
+
 class TestCheck:
     def test_says_nothing_about_a_clean_notebook(self, slides_notebook):
         assert Presentation(slides=slides_notebook).check() == 0

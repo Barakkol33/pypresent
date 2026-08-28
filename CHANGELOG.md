@@ -34,6 +34,15 @@ deck, and is now a package.
 - Images beyond PNG — jpg, gif, webp, svg — embedded by their real type.
 - A test suite, a demo folder, and CI on Linux, macOS and Windows.
 
+### Removed
+
+- **`audit`.** It opened the built deck in headless Chrome to report which
+  slides the renderer had shrunk to fit. That is one subprocess, one browser to
+  have installed and one injected probe script, to say something you see the
+  moment you open the deck. The shrinking itself is unchanged — an over-full
+  slide still scales rather than overflowing — and with it went `fit_floor`,
+  `sparse`, `audit_size` and `chrome` on a `Presentation`.
+
 ### Changed
 
 - `present.py` is now the `pypresent` package, and the tool is `pypresent`
@@ -42,6 +51,13 @@ deck, and is now a package.
   lecture. `lecture=` still works, and a deck whose declaration was stored under
   the old name still loads.
 - The command's first positional is the deck, and it may be a `.md`.
+- **`build` runs the source notebook as well, by default.** The deck quotes what
+  the source printed, so a build that does not re-run it can put new code beside
+  an old number; that was opt-in behind `--source` and is now what a build is.
+  The two runs are taken away rather than added: `--skip-source-run` and
+  `--skip-slides-run` replace `--source` and `--no-run`, and passing both
+  executes nothing. In Python, `build(run=…, source=…)` is now
+  `build(run_source=…, run_slides=…)`.
 - `export --mode slide --format md` now uses this package's own renderer rather
   than nbconvert, so it writes the slides rather than the notebook.
 - `-o` on the command line is relative to the shell's directory rather than the
