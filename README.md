@@ -23,41 +23,66 @@ A lecture notebook and its deck usually drift apart: the code is pasted onto a
 slide, the number beside it was true three runs ago, and the chart is a PNG
 somebody exported in March.
 
-`pypresent` never pastes. A cell in the lecture is named with a comment:
+`pypresent` never pastes. A cell in the lecture is named with a comment, and is
+otherwise an ordinary cell that knows nothing about any deck — here `tokenize`
+came from a cell above it:
 
 ```python
-# slide: tokenize
-def tokenize(text):
-    return text.lower().split()
+# slide: counts
+from collections import Counter
 
-print(len(tokenize("A short sentence")))
+CORPUS = 'the cat sat on the mat and the cat sat again'
+counts = Counter(tokenize(CORPUS))
+print(counts.most_common(3))
+print(f'{len(counts)} distinct tokens')
 ```
 
-and the deck quotes it by that name:
+Run the lecture and it prints:
+
+```
+[('cat', 2), ('sat', 2), ('mat', 1)]
+6 distinct tokens
+```
+
+The deck then quotes that cell **by name**, and copies nothing:
 
 ```python
 slide('''
-## Tokenizing
+## And what it printed
 
-- split on whitespace, lowercased
-- **three** tokens out of that sentence
+- `result()` is the cell's own output, not a number typed twice
+- re-run the lecture and the slide changes with it
 ''',
-    code('tokenize', trim=['# noise']),
-    result('tokenize'),
-    figure('lengths'),
+    code('counts', drop=['from collections']),
+    result('counts'),
+    layout='split',
 )
 ```
-
-`code()` is the listing, `result()` is what it printed, `figure()` is what it
-drew. All three are read out of the lecture at build time, so a listing, a
-number and a chart on a slide are the ones that actually ran — and a name that
-stops matching is reported by the build rather than going quietly stale.
 
 Then:
 
 ```bash
-pypresent build                  # run the slide notebook, check it, write the deck
+pypresent build                  # run the lecture, run the deck, write one html file
 ```
+
+which is this slide — the listing is the code that ran, and the numbers under it
+are the ones it printed:
+
+![A slide: two bullets on the left; on the right the quoted listing, and under it a lighter box holding the output it produced](docs/img/quoted-output.png)
+
+`code()` is the listing, `result()` is what it printed, and `figure()` is what it
+drew — a chart is code output the same way a number is, read out of the lecture's
+stored output at render time, so there is no PNG beside the deck to go stale:
+
+![A slide: three bullets on the left; on the right a framed bar chart of token lengths, drawn by the lecture](docs/img/quoted-figure.png)
+
+All three are resolved when the deck is built, so what a slide shows is what
+actually ran — and a name that stops matching is reported by the build rather
+than going quietly stale.
+
+Both slides above are [`demos/05-notebook-slides.ipynb`](demos/05-notebook-slides.ipynb)
+as it stands, rendered by `./demos/build.sh` and screenshotted by
+[`demos/screenshot.sh`](demos/screenshot.sh).
 
 ## What a deck declares
 

@@ -28,6 +28,10 @@ a running kernel, that is worth a second look at the change.
 - **the docs, if behaviour moved.** They are one page: `docs/README.md`.
 - **a demo, if it is a capability.** `demos/` is meant to be the honest answer to
   "what can this do", and CI builds every deck in it.
+- **fresh screenshots, if you changed how a slide looks.** The two pictures in
+  the README are a real build of `demos/05-notebook-slides.ipynb`, not drawings:
+  `./demos/build.sh && ./demos/screenshot.sh` remakes them. They are not checked
+  in CI, because font rendering differs from machine to machine.
 
 ## The shape of the code
 
