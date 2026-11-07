@@ -5,7 +5,7 @@ versions are [semantic](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [0.1.0] — unreleased
+## [0.1.0] — 2026-11-07
 
 The first release. It began as a single `present.py` that built one lecture's
 deck, and is now a package.
