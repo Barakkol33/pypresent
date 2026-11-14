@@ -105,6 +105,21 @@ A level-one heading anywhere is a section. The first one is the cover.
 
 ## What it does not do
 
-- no fragments, no builds within a slide, no speaker view
+- no fragments, no builds within a slide, no second-screen speaker view
 - no plugins
 - one file, which is the whole point
+
+<!-- notes:
+Speaker notes live in a comment like this one. Press **?** to see them.
+- paragraphs, `-` bullets and inline markdown
+- never on the slide itself
+-->
+
+---
+
+## Notes beside the slide
+
+Press `?` - or the button at the top right - to open the notes for this slide.
+
+<!-- notes: The slide shrinks to make room, and stays 16:9. Press ? again, or Esc, to close. -->
+

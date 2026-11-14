@@ -5,6 +5,17 @@ versions are [semantic](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Speaker notes you can see.** `?` — or the `?` button at the top right —
+  opens a panel on the right with the current slide's notes; the slide shrinks
+  beside it and stays 16:9. The panel follows the slide, `Esc` closes it, and
+  whether it was open is remembered. The button appears only in a deck that has
+  notes, and the key legend says `? notes`.
+- **Notes in a markdown deck**: `<!-- notes: … -->`, on one line or many, on the
+  slide it sits in. It is what `--format md` already wrote, so notes now survive
+  the round trip. Notes take paragraphs, `-` bullets and inline markdown.
+
 ## [0.1.0] — 2026-11-07
 
 The first release. It began as a single `present.py` that built one lecture's

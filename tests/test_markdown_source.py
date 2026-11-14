@@ -84,6 +84,36 @@ class TestBlocks:
         assert deck(tmp_path, "## T\n\n![](pic.png)\n", images=False)[0].elements == []
 
 
+class TestNotes:
+    def test_a_one_line_comment_is_the_slides_notes(self, tmp_path):
+        slide = deck(tmp_path, "## T\n\n- a point\n\n<!-- notes: say this -->\n")[0]
+        assert slide.notes == "say this"
+        assert [el["kind"] for el in slide.elements] == ["bullets"]
+
+    def test_a_comment_can_run_over_many_lines(self, tmp_path):
+        text = "## T\n\n<!-- notes:\nfirst line\n\n- a bullet\n---\n-->\n\nafter\n"
+        slides = deck(tmp_path, text)
+        assert len(slides) == 1                        # the --- inside notes cuts nothing
+        assert slides[0].notes == "first line\n\n- a bullet\n---"
+        assert slides[0].elements[0]["text"] == "after"
+
+    def test_notes_before_the_heading_belong_to_that_slide(self, tmp_path):
+        slides = deck(tmp_path, "## One\n\n---\n\n<!-- notes: for two -->\n\n## Two\n")
+        assert [s.title for s in slides] == ["One", "Two"]
+        assert slides[1].notes == "for two"
+
+    def test_two_comments_add_up(self, tmp_path):
+        slide = deck(tmp_path, "## T\n\n<!-- notes: one -->\n\n<!-- notes: two -->\n")[0]
+        assert slide.notes == "one\n\ntwo"
+
+    def test_what_the_markdown_writer_writes_is_read_back(self, tmp_path):
+        from pypresent import render_markdown
+        from pypresent.model import Slide
+        (tmp_path / "talk.md").write_text(
+            render_markdown([Slide(title="T", notes="say\nthis")]), encoding="utf-8")
+        assert parse_markdown(tmp_path / "talk.md")[0].notes == "say\nthis"
+
+
 class TestFrontMatter:
     def test_is_taken_off_the_front(self, tmp_path):
         slides = deck(tmp_path, "---\ntitle: A talk\n---\n\n# One\n")

@@ -8,6 +8,7 @@ can mail, open from a memory stick, or keep in a repository next to its source.
 from __future__ import annotations
 
 import html
+import re
 
 from ..markup import inline
 from ..model import PROSE, Slide
@@ -64,6 +65,45 @@ def render_element(el: dict) -> str:
     if kind == "rawhtml":
         return f'<div class="rawhtml">{el["html"]}</div>'
     return ""
+
+
+_NOTE_BULLET = re.compile(r"^\s*[-*]\s+(.*)$")
+
+
+def notes_html(text: str) -> str:
+    """Speaker notes as html: paragraphs, ``-`` bullets and inline markdown.
+
+    Notes are read off a laptop screen rather than projected, so this is the
+    small subset that helps there - and nothing a slide has to look good in.
+    """
+    out: list[str] = []
+    para: list[str] = []
+    items: list[str] = []
+
+    def flush() -> None:
+        if para:
+            out.append(f"<p>{inline(' '.join(para))}</p>")
+            para.clear()
+        if items:
+            out.append("<ul>" + "".join(f"<li>{inline(t)}</li>" for t in items) + "</ul>")
+            items.clear()
+
+    for line in text.splitlines():
+        bullet = _NOTE_BULLET.match(line)
+        if bullet:
+            if para:
+                flush()
+            items.append(bullet.group(1).strip())
+        elif not line.strip():
+            flush()
+        elif items and line.startswith(("  ", "\t")):    # a bullet wrapped onto the next line
+            items[-1] += " " + line.strip()
+        else:
+            if items:
+                flush()
+            para.append(line.strip())
+    flush()
+    return "".join(out)
 
 
 def _height(elements: list[dict]) -> float:
@@ -131,7 +171,7 @@ def render_slide(slide: Slide, index: int, total: int, deck_title: str = "",
                  date: str = "") -> str:
     """One <section> per slide: title, two-tone rule, body, footer."""
     cover = index == 0 and slide.level == 1
-    notes = f'<div class="notes">{html.escape(slide.notes)}</div>' if slide.notes else ""
+    notes = f'<div class="notes">{notes_html(slide.notes)}</div>' if slide.notes else ""
 
     if cover:
         body = "".join(render_element(el) for el in slide.elements)
@@ -175,6 +215,20 @@ def render_deck(slides: list[Slide], title: str = "", direction: str = "ltr",
     )
     hint = hint or theme.hint_for(direction)
     lang = lang or ("he" if rtl else "en")
+
+    # the notes panel and its button exist only in a deck that has notes
+    has_notes = any(s.notes for s in slides)
+    notes_label = "הערות" if rtl else "Notes"
+    notes_ui = ""
+    if has_notes:
+        hint += " · ? " + ("הערות" if rtl else "notes")
+        notes_ui = (
+            f'<button class="notes-toggle" type="button" aria-controls="notes-panel" '
+            f'aria-expanded="false" title="{notes_label} (?)">?</button>\n'
+            f'<aside class="notes-panel" id="notes-panel" aria-label="{notes_label}" hidden>'
+            f'<div class="notes-head"><span>{notes_label}</span><span class="notes-num"></span></div>'
+            f'<div class="notes-body"></div></aside>'
+        )
     return f"""<!doctype html>
 <html lang="{lang}" dir="{direction}">
 <head>
@@ -193,6 +247,7 @@ def render_deck(slides: list[Slide], title: str = "", direction: str = "ltr",
 </main>
 <div class="hint">{html.escape(hint)}</div>
 <div class="chrome"><span class="num">1 / {len(slides)}</span><span class="dots"></span></div>
+{notes_ui}
 <script>
 {deck_js()}
 </script>

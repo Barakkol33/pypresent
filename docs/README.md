@@ -264,6 +264,32 @@ It quotes nothing — there is no source notebook to quote — so `code()`,
 `result()` and `figure()` have no meaning here. `--format md` writes slides back
 out in the same shape, which `pypresent` reads straight back in.
 
+### Speaker notes
+
+What to say out loud goes in the deck but never on the slide. In a notebook
+deck it is `notes='…'` on `slide()`, or a `notes()` block. In a markdown deck it
+is a comment, on one line or many, anywhere in the slide it belongs to:
+
+```markdown
+## What it does
+
+- one point
+
+<!-- notes:
+Open with the story about the outage.
+- then the **two** numbers
+- ask the room before showing the answer
+-->
+```
+
+Notes take paragraphs, `-` bullets and the same inline markdown as a slide.
+Notes written between a `---` and the slide's heading belong to that slide.
+
+In the deck, `?` or the `?` button at the top right opens the notes on the
+right; the slide shrinks beside them and stays 16:9. They follow the slide as
+you move, `Esc` closes them, and the deck remembers whether they were open.
+The button is there only when the deck has notes.
+
 ---
 
 ## Themes

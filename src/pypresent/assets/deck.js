@@ -28,9 +28,39 @@ function refit() {
   [120, 400, 900].forEach(t => setTimeout(() => fit(slides[idx]), t));
 }
 
+// speaker notes: a panel on the right, opened with ? or the button, that
+// follows the slide; whether it is open is remembered for the next visit
+const notesPanel = document.querySelector('.notes-panel');
+const notesButton = document.querySelector('.notes-toggle');
+const notesKey = 'pypresent-notes:' + location.pathname;
+
+function fillNotes() {
+  if (!notesPanel || notesPanel.hidden) return;
+  const src = slides[idx].querySelector('.notes');
+  const body = notesPanel.querySelector('.notes-body');
+  body.innerHTML = src ? src.innerHTML
+    : `<p class="notes-empty">${rtl ? 'אין הערות לשקף הזה' : 'No notes for this slide'}</p>`;
+  body.scrollTop = 0;
+  notesPanel.querySelector('.notes-num').textContent = (idx + 1) + ' / ' + slides.length;
+}
+
+function toggleNotes(open) {
+  if (!notesPanel) return;
+  open = open === undefined ? notesPanel.hidden : open;
+  notesPanel.hidden = !open;
+  document.body.classList.toggle('notes-open', open);
+  notesButton.setAttribute('aria-expanded', String(open));
+  try { localStorage.setItem(notesKey, open ? '1' : ''); } catch (e) {}
+  fillNotes();
+  refit();
+}
+
+notesButton?.addEventListener('click', () => { toggleNotes(); notesButton.blur(); });
+
 function show(n) {
   idx = Math.max(0, Math.min(slides.length - 1, n));
   slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+  fillNotes();
   refit();
   bar.style.width = ((idx + 1) / slides.length * 100) + '%';
   counter.textContent = (idx + 1) + ' / ' + slides.length;
@@ -49,6 +79,8 @@ addEventListener('keydown', e => {
   else if (e.key === 'Home') show(0);
   else if (e.key === 'End') show(slides.length - 1);
   else if (e.key === 'f' || e.key === 'F') document.documentElement.requestFullscreen?.();
+  else if (e.key === '?') toggleNotes();
+  else if (e.key === 'Escape' && notesPanel && !notesPanel.hidden) toggleNotes(false);
 });
 dots.addEventListener('click', e => { if (e.target.dataset.i) show(+e.target.dataset.i); });
 
@@ -67,3 +99,4 @@ document.fonts?.ready.then(() => fit(slides[idx]));
 document.querySelectorAll('img').forEach(im => im.complete || (im.onload = () => fit(slides[idx])));
 addEventListener('hashchange', () => show((parseInt(location.hash.slice(1)) || 1) - 1));
 show((parseInt(location.hash.slice(1)) || 1) - 1);
+try { if (notesPanel && localStorage.getItem(notesKey)) toggleNotes(true); } catch (e) {}

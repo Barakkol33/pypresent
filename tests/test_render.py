@@ -48,6 +48,16 @@ class TestHtmlDeck:
         assert Theme().hint in render_deck(slides_from(tmp_path, "## A\n"))
         assert "press on" in render_deck(slides_from(tmp_path, "## A\n"), hint="press on")
 
+    def test_notes_add_a_panel_and_its_button(self, tmp_path):
+        page = render_deck(slides_from(tmp_path, "## A\n\n<!-- notes: say **this** -->\n"))
+        assert 'class="notes-toggle"' in page and 'class="notes-panel"' in page
+        assert '<div class="notes"><p>say <strong>this</strong></p></div>' in page
+        assert "· ? notes</div>" in page             # and the key legend says so
+
+    def test_no_notes_no_panel(self, tmp_path):
+        page = render_deck(slides_from(tmp_path, "## A\n"))
+        assert 'class="notes-toggle"' not in page and "· ? notes</div>" not in page
+
     def test_every_slide_is_numbered_in_its_footer(self, tmp_path):
         page = render_deck(slides_from(tmp_path, "## A\n\n---\n\n## B\n"))
         assert '<span class="num">1</span>' in page
@@ -68,6 +78,16 @@ class TestElements:
     def test_a_table_becomes_a_table(self):
         got = render_element({"kind": "table", "head": ["a"], "rows": [["1"]]})
         assert got == "<table><thead><tr><th>a</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>"
+
+
+class TestNotesHtml:
+    def test_paragraphs_and_bullets(self):
+        from pypresent.render.html import notes_html
+        assert notes_html("one\ntwo\n\n- a\n- b") == "<p>one two</p><ul><li>a</li><li>b</li></ul>"
+
+    def test_markup_is_escaped(self):
+        from pypresent.render.html import notes_html
+        assert notes_html("a <b> & `<c>`") == "<p>a &lt;b&gt; &amp; <code>&lt;c&gt;</code></p>"
 
 
 class TestBullets:

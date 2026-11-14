@@ -129,6 +129,43 @@ tbody tr:nth-child(even){background:var(--pp-row-alt)}
   font-size:11px; opacity:.75}
 .notes{display:none}
 
+/* ---- speaker notes: ? or the button opens a panel on the right, and the
+   stage shrinks beside it - still 16:9, still scaled in cqh ---- */
+body{--pp-notes-w:min(30vw,520px)}
+body.notes-open{padding-right:var(--pp-notes-w)}
+body.notes-open .deck{
+  width:min(calc((100vw - var(--pp-notes-w)) * .94),163.6vh);
+  height:min(calc((100vw - var(--pp-notes-w)) * .94 * .5625),92vh);
+}
+.notes-toggle{position:fixed; top:10px; right:14px; z-index:3;
+  width:28px; height:28px; border-radius:50%; cursor:pointer;
+  font:700 15px/1 var(--pp-font); color:var(--pp-muted);
+  background:var(--pp-canvas); border:1px solid var(--pp-line);
+  box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.notes-toggle:hover,.notes-toggle[aria-expanded="true"]{color:var(--pp-head-fg);
+  background:var(--pp-accent2); border-color:var(--pp-accent2)}
+body.notes-open .notes-toggle{right:calc(var(--pp-notes-w) + 14px)}
+[dir="ltr"] body.notes-open .chrome,
+[dir="rtl"] body.notes-open .hint{inset-inline-end:auto; right:calc(var(--pp-notes-w) + 16px)}
+[dir="rtl"] body.notes-open .hint{inset-inline-start:auto}
+.notes-panel{position:fixed; top:0; right:0; bottom:0; width:var(--pp-notes-w); z-index:2;
+  display:flex; flex-direction:column; background:var(--pp-canvas); color:var(--pp-ink);
+  border-left:1px solid var(--pp-line); box-shadow:-6px 0 18px rgba(0,0,0,.10);
+  font-family:var(--pp-font); font-size:17px; line-height:1.5}
+.notes-panel[hidden]{display:none}
+.notes-head{display:flex; justify-content:space-between; align-items:baseline;
+  padding:14px 20px 10px; border-bottom:1px solid var(--pp-line);
+  color:var(--pp-accent2); font-weight:700; font-size:13px; letter-spacing:.06em;
+  text-transform:uppercase}
+.notes-num{color:var(--pp-muted); font-variant-numeric:tabular-nums}
+.notes-body{flex:1; overflow:auto; padding:16px 20px 24px}
+.notes-body p{margin-bottom:.8em}
+.notes-body ul{margin:0 0 .8em; padding-inline-start:1.2em}
+.notes-body li{margin-bottom:.35em}
+.notes-body strong{color:var(--pp-accent)}
+.notes-body code{font-size:.85em}
+.notes-body .notes-empty{color:var(--pp-muted); font-style:italic}
+
 /* ---- motion: a fade and an appear, nothing more ---- */
 .reveal{opacity:0; transform:translateY(1.4cqh);
   transition:opacity var(--pp-motion) ease,transform var(--pp-motion) ease}
@@ -153,5 +190,6 @@ tbody tr:nth-child(even){background:var(--pp-row-alt)}
   .slide{position:static; display:flex !important; page-break-after:always; height:100vh}
   .fit{transform:none !important}
   .reveal,.slide li{opacity:1 !important; transform:none !important}
-  .progress,.chrome,.hint{display:none}
+  .progress,.chrome,.hint,.notes-toggle,.notes-panel{display:none !important}
+  body.notes-open{padding:0}
 }

@@ -180,7 +180,8 @@ quotes its lecture.
 
 Those are all good, and all bigger. `pypresent` is for one case: a lecture
 notebook that must stay the single source of the code, and a deck of it that
-must be one file with no toolchain to reproduce. If you want speaker view,
+must be one file with no toolchain to reproduce. It does carry speaker notes
+(`?` opens them beside the slide), but if you want a second-screen speaker view,
 fragments, plugins and a themeing ecosystem, use reveal.js.
 
 ## License

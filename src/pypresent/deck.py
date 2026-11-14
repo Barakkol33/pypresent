@@ -10,13 +10,14 @@ from pathlib import Path
 from . import nbio
 from .blocks import MIME, slide_payload
 from .console import say
-from .markup import clean_html, inline, trim_text
+from .markup import clean, clean_html, inline, trim_text
 from .model import Slide
 
 CONFIG_MIME = "application/x-presentation+json"   # a deck's parameters, in a cell output
 
 _HEADING = re.compile(r"^(#{1,6})\s+(.*)$")
 _SLIDE_MARK = re.compile(r"^<!--\s*slide\s*-->\s*$", re.I)
+_NOTES_OPEN = re.compile(r"^\s*<!--\s*notes\b\s*:?(.*)$", re.I)
 _BULLET = re.compile(r"^\s*[-*]\s+(.*)$")
 _NUMBERED = re.compile(r"^\s*\d+[.)]\s+(.*)$")
 _RULE = re.compile(r"^\s*(-{3,}|\*{3,}|_{3,})\s*$")
@@ -60,10 +61,18 @@ class Deck:
         self.current = Slide(section=self.section)
 
     def start(self, title: str = "", level: int = 2) -> None:
+        # notes written between a `---` and the heading that names the slide
+        # belong to that slide, not to the empty one the `---` opened
+        carried = self.current.notes if self.current.is_empty else ""
         self.flush()
         if level == 1 and title:
             self.section = title
-        self.current = Slide(title=title, level=level, section=self.section)
+        self.current = Slide(title=title, level=level, section=self.section, notes=carried)
+
+    def add_notes(self, text: str) -> None:
+        text = clean(text).strip()
+        if text:
+            self.current.notes = (self.current.notes + "\n\n" + text).strip()
 
     def add(self, kind: str, **kw) -> None:
         self.current.add(kind, **kw)
@@ -90,6 +99,25 @@ class Deck:
 
         while i < n:
             line = lines[i]
+
+            # <!-- notes: what to say --> - one line or many, never on the slide
+            notes = _NOTES_OPEN.match(line)
+            if notes:
+                flush_para()
+                rest, buf = notes.group(1), []
+                if "-->" in rest:
+                    buf.append(rest.split("-->", 1)[0])
+                else:
+                    buf.append(rest)
+                    i += 1
+                    while i < n and "-->" not in lines[i]:
+                        buf.append(lines[i])
+                        i += 1
+                    if i < n:
+                        buf.append(lines[i].split("-->", 1)[0])
+                self.add_notes("\n".join(buf))
+                i += 1
+                continue
 
             if _SLIDE_MARK.match(line) or (self.hr_breaks and _RULE.match(line)):
                 flush_para()
@@ -252,7 +280,7 @@ class Deck:
         elif kind == "figure":
             self.add_figure(block, embed_images)
         elif kind == "notes":
-            self.current.notes = (self.current.notes + "\n" + block["text"]).strip()
+            self.add_notes(block["text"])
 
     def add_image_file(self, path: str, embed: bool = True) -> None:
         """A picture the slide names by path, embedded so the deck stays one file."""
