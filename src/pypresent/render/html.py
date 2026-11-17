@@ -226,7 +226,8 @@ def render_deck(slides: list[Slide], title: str = "", direction: str = "ltr",
             f'<button class="notes-toggle" type="button" aria-controls="notes-panel" '
             f'aria-expanded="false" title="{notes_label} (?)">?</button>\n'
             f'<aside class="notes-panel" id="notes-panel" aria-label="{notes_label}" hidden>'
-            f'<div class="notes-head"><span>{notes_label}</span><span class="notes-num"></span></div>'
+            f'<div class="notes-head"><span>{notes_label}</span>'
+            f'<span class="notes-num"></span></div>'
             f'<div class="notes-body"></div></aside>'
         )
     return f"""<!doctype html>
